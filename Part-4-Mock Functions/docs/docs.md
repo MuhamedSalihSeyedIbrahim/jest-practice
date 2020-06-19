@@ -1,0 +1,232 @@
+<header class="postHeader"><a class="edit-page-link button" href="https://github.com/facebook/jest/edit/master/docs/MockFunctions.md" target="_blank" rel="noreferrer noopener">Edit</a><h1 id="__docusaurus" class="postHeaderTitle">Mock Functions</h1></header><article><div><span><p>Mock functions allow you to test the links between code by erasing the actual implementation of a function, capturing calls to the function (and the parameters passed in those calls), capturing instances of constructor functions when instantiated with <code>new</code>, and allowing test-time configuration of return values.</p>
+<p>There are two ways to mock functions: Either by creating a mock function to use in test code, or writing a <a href="/docs/en/manual-mocks"><code>manual mock</code></a> to override a module dependency.</p>
+<h2><a class="anchor" aria-hidden="true" id="using-a-mock-function"></a><a href="#using-a-mock-function" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>Using a mock function</h2>
+<p>Let&apos;s imagine we&apos;re testing an implementation of a function <code>forEach</code>, which invokes a callback for each item in a supplied array.</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">forEach</span>(<span class="hljs-params">items, callback</span>) </span>{
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> index = <span class="hljs-number">0</span>; index &lt; items.length; index++) {
+    callback(items[index]);
+  }
+}
+</code></pre>
+<p>To test this function, we can use a mock function, and inspect the mock&apos;s state to ensure the callback is invoked as expected.</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-keyword">const</span> mockCallback = jest.fn(<span class="hljs-function"><span class="hljs-params">x</span> =&gt;</span> <span class="hljs-number">42</span> + x);
+forEach([<span class="hljs-number">0</span>, <span class="hljs-number">1</span>], mockCallback);
+
+<span class="hljs-comment">// The mock function is called twice</span>
+expect(mockCallback.mock.calls.length).toBe(<span class="hljs-number">2</span>);
+
+<span class="hljs-comment">// The first argument of the first call to the function was 0</span>
+expect(mockCallback.mock.calls[<span class="hljs-number">0</span>][<span class="hljs-number">0</span>]).toBe(<span class="hljs-number">0</span>);
+
+<span class="hljs-comment">// The first argument of the second call to the function was 1</span>
+expect(mockCallback.mock.calls[<span class="hljs-number">1</span>][<span class="hljs-number">0</span>]).toBe(<span class="hljs-number">1</span>);
+
+<span class="hljs-comment">// The return value of the first call to the function was 42</span>
+expect(mockCallback.mock.results[<span class="hljs-number">0</span>].value).toBe(<span class="hljs-number">42</span>);
+</code></pre>
+
+<h2><a class="anchor" aria-hidden="true" id="mock-property"></a><a href="#mock-property" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a><code>.mock</code> property</h2>
+<p>All mock functions have this special <code>.mock</code> property, which is where data about how the function has been called and what the function returned is kept. The <code>.mock</code> property also tracks the value of <code>this</code> for each call, so it is possible to inspect this as well:</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-keyword">const</span> myMock = jest.fn();
+
+<span class="hljs-keyword">const</span> a = <span class="hljs-keyword">new</span> myMock();
+<span class="hljs-keyword">const</span> b = {};
+<span class="hljs-keyword">const</span> bound = myMock.bind(b);
+bound();
+
+<span class="hljs-built_in">console</span>.log(myMock.mock.instances);
+<span class="hljs-comment">// &gt; [ &lt;a&gt;, &lt;b&gt; ]</span>
+</code></pre>
+
+<p>These mock members are very useful in tests to assert how these functions get called, instantiated, or what they returned:</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-comment">// The function was called exactly once</span>
+expect(someMockFunction.mock.calls.length).toBe(<span class="hljs-number">1</span>);
+
+<span class="hljs-comment">// The first arg of the first call to the function was &apos;first arg&apos;</span>
+expect(someMockFunction.mock.calls[<span class="hljs-number">0</span>][<span class="hljs-number">0</span>]).toBe(<span class="hljs-string">&apos;first arg&apos;</span>);
+
+<span class="hljs-comment">// The second arg of the first call to the function was &apos;second arg&apos;</span>
+expect(someMockFunction.mock.calls[<span class="hljs-number">0</span>][<span class="hljs-number">1</span>]).toBe(<span class="hljs-string">&apos;second arg&apos;</span>);
+
+<span class="hljs-comment">// The return value of the first call to the function was &apos;return value&apos;</span>
+expect(someMockFunction.mock.results[<span class="hljs-number">0</span>].value).toBe(<span class="hljs-string">&apos;return value&apos;</span>);
+
+<span class="hljs-comment">// This function was instantiated exactly twice</span>
+expect(someMockFunction.mock.instances.length).toBe(<span class="hljs-number">2</span>);
+
+<span class="hljs-comment">// The object returned by the first instantiation of this function</span>
+<span class="hljs-comment">// had a `name` property whose value was set to &apos;test&apos;</span>
+expect(someMockFunction.mock.instances[<span class="hljs-number">0</span>].name).toEqual(<span class="hljs-string">&apos;test&apos;</span>);
+</code></pre>
+
+<h2><a class="anchor" aria-hidden="true" id="mock-return-values"></a><a href="#mock-return-values" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>Mock Return Values</h2>
+<p>Mock functions can also be used to inject test values into your code during a test:</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-keyword">const</span> myMock = jest.fn();
+<span class="hljs-built_in">console</span>.log(myMock());
+<span class="hljs-comment">// &gt; undefined</span>
+
+myMock.mockReturnValueOnce(<span class="hljs-number">10</span>).mockReturnValueOnce(<span class="hljs-string">&apos;x&apos;</span>).mockReturnValue(<span class="hljs-literal">true</span>);
+
+<span class="hljs-built_in">console</span>.log(myMock(), myMock(), myMock(), myMock());
+<span class="hljs-comment">// &gt; 10, &apos;x&apos;, true, true</span>
+</code></pre>
+
+<p>Mock functions are also very effective in code that uses a functional continuation-passing style. Code written in this style helps avoid the need for complicated stubs that recreate the behavior of the real component they&apos;re standing in for, in favor of injecting values directly into the test right before they&apos;re used.</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-keyword">const</span> filterTestFn = jest.fn();
+
+<span class="hljs-comment">// Make the mock return `true` for the first call,</span>
+<span class="hljs-comment">// and `false` for the second call</span>
+filterTestFn.mockReturnValueOnce(<span class="hljs-literal">true</span>).mockReturnValueOnce(<span class="hljs-literal">false</span>);
+
+<span class="hljs-keyword">const</span> result = [<span class="hljs-number">11</span>, <span class="hljs-number">12</span>].filter(<span class="hljs-function"><span class="hljs-params">num</span> =&gt;</span> filterTestFn(num));
+
+<span class="hljs-built_in">console</span>.log(result);
+<span class="hljs-comment">// &gt; [11]</span>
+<span class="hljs-built_in">console</span>.log(filterTestFn.mock.calls);
+<span class="hljs-comment">// &gt; [ [11], [12] ]</span>
+</code></pre>
+
+<p>Most real-world examples actually involve getting ahold of a mock function on a dependent component and configuring that, but the technique is the same. In these cases, try to avoid the temptation to implement logic inside of any function that&apos;s not directly being tested.</p>
+<h2><a class="anchor" aria-hidden="true" id="mocking-modules"></a><a href="#mocking-modules" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>Mocking Modules</h2>
+<p>Suppose we have a class that fetches users from our API. The class uses <a href="https://github.com/axios/axios">axios</a> to call the API then returns the <code>data</code> attribute which contains all the users:</p>
+<pre><code class="hljs css language-js"><span class="hljs-comment">// users.js</span>
+<span class="hljs-keyword">import</span> axios <span class="hljs-keyword">from</span> <span class="hljs-string">&apos;axios&apos;</span>;
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Users</span> </span>{
+<span class="hljs-keyword">static</span> all() {
+<span class="hljs-keyword">return</span> axios.get(<span class="hljs-string">&apos;/users.json&apos;</span>).then(<span class="hljs-function"><span class="hljs-params">resp</span> =&gt;</span> resp.data);
+}
+}
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> Users;
+</code></pre>
+
+<p>Now, in order to test this method without actually hitting the API (and thus creating slow and fragile tests), we can use the <code>jest.mock(...)</code> function to automatically mock the axios module.</p>
+<p>Once we mock the module we can provide a <code>mockResolvedValue</code> for <code>.get</code> that returns the data we want our test to assert against. In effect, we are saying that we want axios.get(&apos;/users.json&apos;) to return a fake response.</p>
+<pre><code class="hljs css language-js"><span class="hljs-comment">// users.test.js</span>
+<span class="hljs-keyword">import</span> axios <span class="hljs-keyword">from</span> <span class="hljs-string">&apos;axios&apos;</span>;
+<span class="hljs-keyword">import</span> Users <span class="hljs-keyword">from</span> <span class="hljs-string">&apos;./users&apos;</span>;
+
+jest.mock(<span class="hljs-string">&apos;axios&apos;</span>);
+
+test(<span class="hljs-string">&apos;should fetch users&apos;</span>, () =&gt; {
+<span class="hljs-keyword">const</span> users = [{<span class="hljs-attr">name</span>: <span class="hljs-string">&apos;Bob&apos;</span>}];
+<span class="hljs-keyword">const</span> resp = {<span class="hljs-attr">data</span>: users};
+axios.get.mockResolvedValue(resp);
+
+<span class="hljs-comment">// or you could use the following depending on your use case:</span>
+<span class="hljs-comment">// axios.get.mockImplementation(() =&gt; Promise.resolve(resp))</span>
+
+<span class="hljs-keyword">return</span> Users.all().then(<span class="hljs-function"><span class="hljs-params">data</span> =&gt;</span> expect(data).toEqual(users));
+});
+</code></pre>
+
+<h2><a class="anchor" aria-hidden="true" id="mock-implementations"></a><a href="#mock-implementations" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>Mock Implementations</h2>
+<p>Still, there are cases where it&apos;s useful to go beyond the ability to specify return values and full-on replace the implementation of a mock function. This can be done with <code>jest.fn</code> or the <code>mockImplementationOnce</code> method on mock functions.</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-keyword">const</span> myMockFn = jest.fn(<span class="hljs-function"><span class="hljs-params">cb</span> =&gt;</span> cb(<span class="hljs-literal">null</span>, <span class="hljs-literal">true</span>));
+
+myMockFn(<span class="hljs-function">(<span class="hljs-params">err, val</span>) =&gt;</span> <span class="hljs-built_in">console</span>.log(val));
+<span class="hljs-comment">// &gt; true</span>
+</code></pre>
+
+<p>The <code>mockImplementation</code> method is useful when you need to define the default implementation of a mock function that is created from another module:</p>
+<pre><code class="hljs css language-js"><span class="hljs-comment">// foo.js</span>
+<span class="hljs-built_in">module</span>.exports = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+  <span class="hljs-comment">// some implementation;</span>
+};
+
+<span class="hljs-comment">// test.js</span>
+jest.mock(<span class="hljs-string">&apos;../foo&apos;</span>); <span class="hljs-comment">// this happens automatically with automocking</span>
+<span class="hljs-keyword">const</span> foo = <span class="hljs-built_in">require</span>(<span class="hljs-string">&apos;../foo&apos;</span>);
+
+<span class="hljs-comment">// foo is a mock function</span>
+foo.mockImplementation(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-number">42</span>);
+foo();
+<span class="hljs-comment">// &gt; 42</span>
+</code></pre>
+
+<p>When you need to recreate a complex behavior of a mock function such that multiple function calls produce different results, use the <code>mockImplementationOnce</code> method:</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-keyword">const</span> myMockFn = jest
+  .fn()
+  .mockImplementationOnce(<span class="hljs-function"><span class="hljs-params">cb</span> =&gt;</span> cb(<span class="hljs-literal">null</span>, <span class="hljs-literal">true</span>))
+  .mockImplementationOnce(<span class="hljs-function"><span class="hljs-params">cb</span> =&gt;</span> cb(<span class="hljs-literal">null</span>, <span class="hljs-literal">false</span>));
+
+myMockFn(<span class="hljs-function">(<span class="hljs-params">err, val</span>) =&gt;</span> <span class="hljs-built_in">console</span>.log(val));
+<span class="hljs-comment">// &gt; true</span>
+
+myMockFn(<span class="hljs-function">(<span class="hljs-params">err, val</span>) =&gt;</span> <span class="hljs-built_in">console</span>.log(val));
+<span class="hljs-comment">// &gt; false</span>
+</code></pre>
+
+<p>When the mocked function runs out of implementations defined with <code>mockImplementationOnce</code>, it will execute the default implementation set with <code>jest.fn</code> (if it is defined):</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-keyword">const</span> myMockFn = jest
+  .fn(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-string">&apos;default&apos;</span>)
+  .mockImplementationOnce(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-string">&apos;first call&apos;</span>)
+  .mockImplementationOnce(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-string">&apos;second call&apos;</span>);
+
+<span class="hljs-built_in">console</span>.log(myMockFn(), myMockFn(), myMockFn(), myMockFn());
+<span class="hljs-comment">// &gt; &apos;first call&apos;, &apos;second call&apos;, &apos;default&apos;, &apos;default&apos;</span>
+</code></pre>
+
+<p>For cases where we have methods that are typically chained (and thus always need to return <code>this</code>), we have a sugary API to simplify this in the form of a <code>.mockReturnThis()</code> function that also sits on all mocks:</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-keyword">const</span> myObj = {
+  <span class="hljs-attr">myMethod</span>: jest.fn().mockReturnThis(),
+};
+
+<span class="hljs-comment">// is the same as</span>
+
+<span class="hljs-keyword">const</span> otherObj = {
+<span class="hljs-attr">myMethod</span>: jest.fn(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+}),
+};
+</code></pre>
+
+<h2><a class="anchor" aria-hidden="true" id="mock-names"></a><a href="#mock-names" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>Mock Names</h2>
+<p>You can optionally provide a name for your mock functions, which will be displayed instead of &quot;jest.fn()&quot; in test error output. Use this if you want to be able to quickly identify the mock function reporting an error in your test output.</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-keyword">const</span> myMockFn = jest
+  .fn()
+  .mockReturnValue(<span class="hljs-string">&apos;default&apos;</span>)
+  .mockImplementation(<span class="hljs-function"><span class="hljs-params">scalar</span> =&gt;</span> <span class="hljs-number">42</span> + scalar)
+  .mockName(<span class="hljs-string">&apos;add42&apos;</span>);
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="custom-matchers"></a><a href="#custom-matchers" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>Custom Matchers</h2>
+<p>Finally, in order to make it less demanding to assert how mock functions have been called, we&apos;ve added some custom matcher functions for you:</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-comment">// The mock function was called at least once</span>
+expect(mockFunc).toHaveBeenCalled();
+
+<span class="hljs-comment">// The mock function was called at least once with the specified args</span>
+expect(mockFunc).toHaveBeenCalledWith(arg1, arg2);
+
+<span class="hljs-comment">// The last call to the mock function was called with the specified args</span>
+expect(mockFunc).toHaveBeenLastCalledWith(arg1, arg2);
+
+<span class="hljs-comment">// All calls and the name of the mock is written as a snapshot</span>
+expect(mockFunc).toMatchSnapshot();
+</code></pre>
+
+<p>These matchers are sugar for common forms of inspecting the <code>.mock</code> property. You can always do this manually yourself if that&apos;s more to your taste or if you need to do something more specific:</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-comment">// The mock function was called at least once</span>
+expect(mockFunc.mock.calls.length).toBeGreaterThan(<span class="hljs-number">0</span>);
+
+<span class="hljs-comment">// The mock function was called at least once with the specified args</span>
+expect(mockFunc.mock.calls).toContainEqual([arg1, arg2]);
+
+<span class="hljs-comment">// The last call to the mock function was called with the specified args</span>
+expect(mockFunc.mock.calls[mockFunc.mock.calls.length - <span class="hljs-number">1</span>]).toEqual([
+arg1,
+arg2,
+]);
+
+<span class="hljs-comment">// The first arg of the last call to the mock function was `42`</span>
+<span class="hljs-comment">// (note that there is no sugar helper for this specific of an assertion)</span>
+expect(mockFunc.mock.calls[mockFunc.mock.calls.length - <span class="hljs-number">1</span>][<span class="hljs-number">0</span>]).toBe(<span class="hljs-number">42</span>);
+
+<span class="hljs-comment">// A snapshot will check that a mock was invoked the same number of times,</span>
+<span class="hljs-comment">// in the same order, with the same arguments. It will also assert on the name.</span>
+expect(mockFunc.mock.calls).toEqual([[arg1, arg2]]);
+expect(mockFunc.getMockName()).toBe(<span class="hljs-string">&apos;a mock name&apos;</span>);
+</code></pre>
+
+<p>For a complete list of matchers, check out the <a href="/docs/en/expect">reference docs</a>.</p>
+</span></div></article>

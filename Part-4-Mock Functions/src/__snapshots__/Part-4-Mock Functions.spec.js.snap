@@ -1,0 +1,34 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`manual mock testing mock function call oriented tutorial 1`] = `
+[MockFunction add42] {
+  "calls": Array [
+    Array [
+      1,
+      2,
+    ],
+    Array [
+      1,
+      2,
+    ],
+    Array [
+      1,
+      2,
+    ],
+  ],
+  "results": Array [
+    Object {
+      "type": "return",
+      "value": 43,
+    },
+    Object {
+      "type": "return",
+      "value": 43,
+    },
+    Object {
+      "type": "return",
+      "value": 43,
+    },
+  ],
+}
+`;

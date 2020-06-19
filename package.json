@@ -1,0 +1,50 @@
+{
+  "name": "jest-practice",
+  "version": "1.0.0",
+  "description": "",
+  "main": "jest practice",
+  "scripts": {
+    "test": "jest --config ./jest.config.js",
+    "test:watch": "npm run test -- --watch",
+    "test:notify": "jest JEST-PRACTICE-TEST --notify --config=config.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MuhamedSalihSeyedIbrahim/jest-practice.git"
+  },
+  "keywords": [
+    "jest",
+    "js",
+    "ts",
+    "testing"
+  ],
+  "author": "MUHAMED SALIH SI",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MuhamedSalihSeyedIbrahim/jest-practice/issues"
+  },
+  "homepage": "https://github.com/MuhamedSalihSeyedIbrahim/jest-practice#readme",
+  "devDependencies": {
+    "@azure/functions": "^1.2.2",
+    "@babel/preset-env": "^7.10.2",
+    "@babel/preset-typescript": "^7.10.1",
+    "@shelf/jest-mongodb": "^1.1.5",
+    "@types/jest": "^26.0.0",
+    "eslint": "^7.2.0",
+    "eslint-plugin-jest": "^23.13.2",
+    "jest": "^26.0.1",
+    "jest-cli": "^26.0.1",
+    "jest-diff": "^26.0.1",
+    "jest-docblock": "^26.0.0",
+    "jest-get-type": "^26.0.0",
+    "jest-validate": "^26.0.1",
+    "pretty-format": "^26.0.1",
+    "ts-jest": "^26.1.0",
+    "typescript": "^3.3.3"
+  },
+  "dependencies": {
+    "axios": "^0.19.2",
+    "mongodb": "^3.5.9",
+    "node-fetch": "^2.6.0"
+  }
+}
